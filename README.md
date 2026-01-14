@@ -1,7 +1,7 @@
 # POLSKI--Language
-Są dwie funkcje:
-  -zmienna;
-  -napisz;
+Są dwie funkcje: <br>
+  -zmienna; <br>
+  -napisz; <br>
 
 Deklaracja zmiennej:
 <pre>
