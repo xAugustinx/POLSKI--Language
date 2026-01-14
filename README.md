@@ -12,7 +12,8 @@ Zmiana wartości Zmiennej:
   zmienna {nazwa} = *(np)* 1+1+{innaNazwaZmiennej}</pre>
 
 Aby zmienna była stringiem trzeba na końcu wartości ustawionej dodać "":
+<pre>
   zmienna {nazwa} = {kody ascii decymalny}""; *przykładowo można zmienna xy = 107010"";
   107 = 'k'
   010 = '\n'*
-  
+</pre>
