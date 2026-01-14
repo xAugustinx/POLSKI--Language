@@ -4,8 +4,9 @@ Są dwie funkcje:
   -napisz;
 
 Deklaracja zmiennej:
+<pre>
   zmienna {nazwa}; (zmienna o wartości wynoszącej 0)
-  zmienna {nazwa} = *(np)* 1+1+{innaNazwaZmiennej}; 
+  zmienna {nazwa} = *(np)* 1+1+{innaNazwaZmiennej};  </pre>
 Zmiana wartości Zmiennej:
   zmienna {nazwa} = *(np)* 1+1+{innaNazwaZmiennej}
 
