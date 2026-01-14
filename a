@@ -6,10 +6,19 @@ typedef unsigned char byte;
 typedef struct {unsigned char b0 : 1;unsigned char b1 : 1;unsigned char b2 : 1;unsigned char b3 : 1;unsigned char b4 : 1;unsigned char b5 : 1;unsigned char b6 : 1;unsigned char b7 : 1;} bools;
 
 
-char funkcje[] = {"napiszT|napiszL|zmienna|"};
+char funkcje[] = {"napisz|zmienna|"};
 // kod 0
-// kod 8
-//kod 16
+// kod 7
+
+int iloscLiczb(int meow)
+{
+    for (int i = 1; TRUE; i++)
+    {
+        meow/=10;
+        if (!meow) return i;
+    }
+    
+}
 
 
 

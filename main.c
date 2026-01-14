@@ -1,14 +1,17 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "a"
 
 #define sprawdzayZnakWFunkcji spf
 #define smallestInt -32767
+#define printERROR printf
+#define SPACE 32
 
-extern char funkcje[];
-
-typedef struct {char nazwaID[10]; int id;  int grupa; int wartosc; } obiekt;
+typedef struct {char nazwaID[10]; int id;  int grupa; float wartosc; byte typeofData; } obiekt;
 
 int idObiektow = 0;
 
@@ -23,13 +26,18 @@ int liniaKoduLiczba = 0;
 
 FILE * plikKodu;
 
+void blad(char nazwa[])
+{
+    printf("%s, LINIA: %d\n",nazwa, liniaKoduLiczba ); 
+}
+
 int czyZnaelziono(char nazwa[])
 {
     for (int i = 1; i < iloscObiektow; i++)
     {
         for (int pe = 0; pe < 10; pe++)
         {
-            if (pamiec[i].nazwaID[pe] == 0 && nazwa[pe] == 0) return pamiec[i].wartosc;
+            if (pamiec[i].nazwaID[pe] == 0 && nazwa[pe] == 0 || (pamiec[i].nazwaID[pe] == 0 && nazwa[pe] == '|' ) ) return i;
             else if (pamiec[i].nazwaID[pe] != nazwa[pe]) break;  
         }
     }
@@ -130,65 +138,67 @@ int main(int argc, char *qrgv[])
             fseek(plikKodu,i,0);
             fscanf(plikKodu,"%c",&aktualnaLinijkaKodu[i - obecnyCzytanyZnak]);
         }
-        //początek operacji
-        printf("%s\n",aktualnaLinijkaKodu);
         
         int aktualnyKodFunkcji = kodPodajnik(aktualnaLinijkaKodu);
 
         int sprawdzayZnakWFunkcji = 0;
 
 
-        if (aktualnyKodFunkcji == -1) {printf("Nie Istniejąca Funkcja, linia %d ",liniaKoduLiczba); return 0;}
-        else if (aktualnyKodFunkcji == 16  )
+        if (aktualnyKodFunkcji == -1) {printERROR("Nie Istniejąca Funkcja, linia %d ",liniaKoduLiczba); turnON = 0;}
+        else if (aktualnyKodFunkcji == 7)
         {
-            for (int i = 1; i < sizeof(aktualnaLinijkaKodu); i++ )
+            for (int i = 1; i < strlen(aktualnaLinijkaKodu); i++ )
             {
-                if (aktualnaLinijkaKodu[i] != ' ' && aktualnaLinijkaKodu[i-1] == ' ' ) spf = i;
+                if (aktualnaLinijkaKodu[i] != SPACE   ) {
+                    if (aktualnaLinijkaKodu[i-1] == SPACE) {spf = i; break;}
+                }
             }
-            if (!spf) {printf("niepoprawna operacja na zmiennych, linia %d ",liniaKoduLiczba); return 1;};
+            if (!spf) {printERROR("niepoprawna operacja na zmiennych, linia %d ",liniaKoduLiczba); turnON = 0;};
             
             int dlugoscNazwy;
-            for (dlugoscNazwy = spf; dlugoscNazwy < sizeof(aktualnaLinijkaKodu); dlugoscNazwy++)
+            for (dlugoscNazwy = spf; dlugoscNazwy < strlen(aktualnaLinijkaKodu); dlugoscNazwy++)
             {if (aktualnaLinijkaKodu[dlugoscNazwy] == ' ') break; }
             char nazwaZmiennej[10];
             nazwaZmiennej[dlugoscNazwy-1] = 0;
             obiekt nowyObiekt;
+            byte czyBylaSpacja = 0;
+
             for (int i = spf; i < spf + 10; i++)
             {
-                if (i < spf + dlugoscNazwy) {nazwaZmiennej[i - spf] = aktualnaLinijkaKodu[i]; nowyObiekt.nazwaID[i - spf] = aktualnaLinijkaKodu[i];}
+                if (i - spf <  dlugoscNazwy - spf) {nazwaZmiennej[i - spf] = aktualnaLinijkaKodu[i]; nowyObiekt.nazwaID[i - spf] = aktualnaLinijkaKodu[i];}
                 else {nazwaZmiennej[i - spf] = 0; nowyObiekt.nazwaID[i - spf] = 0; }
             }
-            
+
             byte czyWartoscUstawiona = 0;
 
-            
-
-            for (spf =  spf + dlugoscNazwy; spf < sizeof(aktualnaLinijkaKodu); spf++ ) {
+            for (spf =  dlugoscNazwy; spf < strlen(aktualnaLinijkaKodu); spf++ ) {
                 if (aktualnaLinijkaKodu[spf] != ' ' && czyWartoscUstawiona ) break;
-                if (aktualnaLinijkaKodu[spf] == '=' ) czyWartoscUstawiona = 1;
+                else if (aktualnaLinijkaKodu[spf] == '=' ) czyWartoscUstawiona = 1;
             }
             
-            int wartoscUstawiona = 0;
+            float wartoscUstawiona = 0;
+            byte typZmiennej = 0;
 
             if (czyWartoscUstawiona)
             {
                 char znakUzyty = '+';
-                int wartoscPojedyncza = 0;
+                float wartoscPojedyncza = 0;
                 
                 byte czyTerazJestZmienna = 0;
                 int pierwszyZnakZmiennej = 0;
                 int ostatniZnak = 0;
+                int przecinek = 0;
 
-                for (spf; spf < sizeof(aktualnaLinijkaKodu); spf++)
+                for (spf; spf < strlen(aktualnaLinijkaKodu)+1; spf++)
                 {
-                    if (aktualnaLinijkaKodu[spf] == '+' || aktualnaLinijkaKodu[spf] == '-' || aktualnaLinijkaKodu[spf] == '*' || aktualnaLinijkaKodu[spf] == '/' || sizeof(aktualnaLinijkaKodu)-1 == spf )
+                    if (aktualnaLinijkaKodu[spf] == '+' || aktualnaLinijkaKodu[spf] == '-' || aktualnaLinijkaKodu[spf] == '*' || aktualnaLinijkaKodu[spf] == '/' || strlen(aktualnaLinijkaKodu) == spf )
                     {
                         if (czyTerazJestZmienna)
                         {
                             char tablicaZNazwaZmiennej[10];
-                            for (int i = pierwszyZnakZmiennej; i < 10; i++)
+                            for (int i = pierwszyZnakZmiennej; i < pierwszyZnakZmiennej + 10; i++)
                             {
-                                if (i < ostatniZnak) tablicaZNazwaZmiennej[i-pierwszyZnakZmiennej] = aktualnaLinijkaKodu[i]; 
+                                if (i <= ostatniZnak) tablicaZNazwaZmiennej[i-pierwszyZnakZmiennej] = aktualnaLinijkaKodu[i];
                                 else tablicaZNazwaZmiennej[i-pierwszyZnakZmiennej] = 0;
                             }
                             int wartoscKtoramZajebiemy = czyZnaelziono(tablicaZNazwaZmiennej);
@@ -196,6 +206,7 @@ int main(int argc, char *qrgv[])
                             {
                                 wartoscPojedyncza = pamiec[wartoscKtoramZajebiemy].wartosc;
                             }
+                            przecinek = 0;
                         }
 
                         switch (znakUzyty){
@@ -206,41 +217,98 @@ int main(int argc, char *qrgv[])
                         }
                         znakUzyty = aktualnaLinijkaKodu[spf];
                         wartoscPojedyncza = 0;
-
+                        przecinek = 0;
                         czyTerazJestZmienna = 0;
                     }
-                    else if (aktualnaLinijkaKodu[spf] > 47 && aktualnaLinijkaKodu[spf] < 58)
+                    else if (aktualnaLinijkaKodu[spf] > 47 && aktualnaLinijkaKodu[spf] < 58 && !czyTerazJestZmienna )
                     {
-                        wartoscPojedyncza = (wartoscPojedyncza * 10) + aktualnaLinijkaKodu[spf] - 48;
-                        czyTerazJestZmienna = 0;
+                        if (!przecinek) wartoscPojedyncza = (wartoscPojedyncza * 10) + aktualnaLinijkaKodu[spf] - 48;
+                        else 
+                        {
+                            wartoscPojedyncza+=((float)(aktualnaLinijkaKodu[spf] - 48))/(float)(przecinek*10);
+                            przecinek++;
+                        }
                     }
                     else if (aktualnaLinijkaKodu[spf] != ' ' )
                     {
-                        if (!czyTerazJestZmienna) 
+                        if (aktualnaLinijkaKodu[spf] != ',')
                         {
-                            czyTerazJestZmienna = 1;
-                            pierwszyZnakZmiennej = spf;
-                            ostatniZnak = spf;
+                            if (!czyTerazJestZmienna) 
+                            {
+                                czyTerazJestZmienna = 1;
+                                pierwszyZnakZmiennej = spf;
+                                ostatniZnak = spf;
+                            }
+                            else ostatniZnak++;
                         }
-                        else ostatniZnak++;
+                        else przecinek++;  
+                        if (aktualnaLinijkaKodu[spf] == '"') typZmiennej = 1;
+
                     }
                 }
             }
 
-            if (wartoscUstawiona > 0)
-            {
-                printf("%d\n",wartoscUstawiona);
-            }
+            nowyObiekt.grupa = 0;
+            nowyObiekt.wartosc = wartoscUstawiona;
+            nowyObiekt.typeofData = typZmiennej;
 
-            if (czyZnaelziono(nazwaZmiennej) == smallestInt)
-            {
-                nowyObiekt.grupa = 0;
-                nowyObiekt.wartosc = wartoscUstawiona;
-                nowyElement(nowyObiekt);
-            }
+            int ktoryElement = czyZnaelziono(nazwaZmiennej);
+
+            if (czyZnaelziono(nazwaZmiennej) == ktoryElement)nowyElement(nowyObiekt);
+            else pamiec[ktoryElement] = nowyObiekt;
+
         }
-        
+        else if (aktualnyKodFunkcji == 0) {
+            int pierwszy = -1;
+            int ostatni = -1;
 
+            for (int i = 7; i < sizeof(aktualnaLinijkaKodu);  i++ ) {if (aktualnaLinijkaKodu[i] != ' ') {pierwszy = i; break;}}
+            for (int i = pierwszy; i < sizeof(aktualnaLinijkaKodu); i++) if ((aktualnaLinijkaKodu[i] == ' ' || aktualnaLinijkaKodu[i] == 0  )) {ostatni = i; break;}
+
+            if (aktualnaLinijkaKodu[pierwszy] == '"' && aktualnaLinijkaKodu[ostatni-1] == '"')
+            {
+                for (int i = pierwszy+1; i < ostatni-1; i++) 
+                {
+                    if (aktualnaLinijkaKodu[i] == '|') printf("%c",' ');
+                    else printf("%c",aktualnaLinijkaKodu[i]);
+                    
+                }
+                printf("\n");
+            }
+            else if (aktualnaLinijkaKodu[pierwszy] == '"' || aktualnaLinijkaKodu[ostatni-1] == '"') {blad("Jeden '' "); return 1; }
+            else
+            {
+                char nazwaZmiennej[ostatni - pierwszy + 1];
+                nazwaZmiennej[ostatni - pierwszy] = 0;
+                for (int i = pierwszy; i < ostatni; i++) nazwaZmiennej[i- pierwszy] = aktualnaLinijkaKodu[i];
+                int element = czyZnaelziono(nazwaZmiennej);
+                if (element == smallestInt) {printf("BŁĄD LINIA: %d\n",liniaKoduLiczba );   return 1;}
+
+                if (!pamiec[element].typeofData) printf("%f\n", pamiec[element].wartosc);
+                else if (pamiec[element].typeofData == 1 )
+                {
+                    int iloscZnakow = iloscLiczb((int)pamiec[element].wartosc);
+                    char string[iloscZnakow+1] ;
+                    sprintf(string, "%d",(int)pamiec[element].wartosc );
+
+                    byte razDwaTrzy = 0;
+                    byte wartoscPojedyncza = 0;
+
+                    for (int i = 0; i < iloscZnakow; i++ )
+                    {
+                        if (string[i] == 0) string[i]+=48;
+                        if (!(i == iloscZnakow)) wartoscPojedyncza = wartoscPojedyncza*10+(string[i]-48);
+                        razDwaTrzy++;
+                        if (razDwaTrzy > 2  )
+                        {
+                            printf("%c",wartoscPojedyncza);
+                            wartoscPojedyncza = 0;
+                            razDwaTrzy = 0;
+                        }
+                    }
+                }
+            } 
+        }
 
         //koniec operacji
         ostatniZnakLini+=1;
@@ -258,7 +326,7 @@ int main(int argc, char *qrgv[])
         usleep(100);
         obecnyCzytanyZnak = ostatniZnakLini;
 
-        liniaKoduLiczba++;
+        //liniaKoduLiczba++;
     }
     free(pamiec);
     fclose(plikKodu);
