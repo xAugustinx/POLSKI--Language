@@ -12,23 +12,43 @@
 #define SPACE 32
 
 typedef struct {char nazwaID[10]; int id;  int grupa; float wartosc; byte typeofData; } obiekt;
+typedef struct {int znakPowrotu; char nazwaID[10]; int znakPowrotu2; } idzDo;
+
+int ostatniZnakLini;
 
 int idObiektow = 0;
 
-
 obiekt * pamiec;
 long iloscObiektow = 1;
+
+idzDo * listaIdzDo;
+long listaIdzDoIlosc = 1;
 
 int ostatniZnakPliku;
 byte turnON = TRUE;
 
 int liniaKoduLiczba = 0;
-
 FILE * plikKodu;
 
-void blad(char nazwa[])
+int obecnyCzytanyZnak = 0;
+
+
+void edycjaElementu(int elementModefikowany, int wartoscxZmiana) {pamiec[elementModefikowany].wartosc = wartoscxZmiana;}
+void blad(char nazwa[]) {printf("%s, LINIA: %d\n",nazwa, liniaKoduLiczba ); turnON = 0;} 
+void komentarz() {}
+
+int poszukiwaniePosrud(int dlugosc, char porwownywana[])
 {
-    printf("%s, LINIA: %d\n",nazwa, liniaKoduLiczba ); 
+    byte czyZnalezniony = 0;
+    for (int i = 1; i < listaIdzDoIlosc && !czyZnalezniony; i++)
+    {
+        for (int y = 0; y < 10 && !czyZnalezniony; y++)
+        {
+            if (listaIdzDo[i].nazwaID[y] + porwownywana[y] == 0 ) {czyZnalezniony =1; return i ;}
+            else if (listaIdzDo[i].nazwaID[y] != porwownywana[y]) break; 
+        }
+    }
+    return FALSE-1;
 }
 
 int czyZnaelziono(char nazwa[])
@@ -53,10 +73,6 @@ void nowyElement(obiekt musztarda)
     pamiec = tymczasowy;
     pamiec[iloscObiektow-1] = musztarda;
 
-}
-void edycjaElementu(int elementModefikowany, int wartoscxZmiana)
-{
-    pamiec[elementModefikowany].wartosc = wartoscxZmiana;
 }
 
 int sprawdzKodFunkcji(int code,char tablica[])
@@ -88,7 +104,7 @@ int kodPodajnik(char tablica[])
 
 int doNajblizszegoZnaku(int znak)
 {
-    
+
     char znakDoNajblizszego;
     for (int i = znak; TRUE; i++)
     {
@@ -100,16 +116,65 @@ int doNajblizszegoZnaku(int znak)
     }
 }
 
+void tworzenieGoto(char liniaKodu[], int sizeOfLinijkaKodu )
+{
+    idzDo tymczasowy;
+
+    if (sizeOfLinijkaKodu > 10 ) {blad("goto za dużo znaków"); }
+    for (int i = 0; i < sizeOfLinijkaKodu; i++) tymczasowy.nazwaID[i] = liniaKodu[i];
+    for (int i = sizeOfLinijkaKodu; i < 10; i++) tymczasowy.nazwaID[i] = 0;
+
+    byte czyZnalezniony = 0;
+    if (poszukiwaniePosrud(listaIdzDoIlosc,tymczasowy.nazwaID) > -1) czyZnalezniony = 1;
+
+    if (!czyZnalezniony)
+    {
+        listaIdzDoIlosc++;
+        idzDo * nowy = realloc(listaIdzDo, listaIdzDoIlosc * sizeof(idzDo));
+        listaIdzDo = nowy;
+        tymczasowy.znakPowrotu = obecnyCzytanyZnak-1;
+        tymczasowy.znakPowrotu2 = ostatniZnakLini-1;
+        listaIdzDo[listaIdzDoIlosc-1] = tymczasowy;
+    }
+}
+
+void wracanieGoTo(char aktualnaLinia[], int sizeOfAktualnaLinia)
+{
+    int znakSprawdzany = 0;
+    int czyZaczacLiczyc = 0;
+
+    for (int i = 1; i < sizeOfAktualnaLinia; i++)
+    {
+        if (aktualnaLinia[i-1] == ' ' && aktualnaLinia[i] != ' ') { znakSprawdzany = i; break;}
+    }
+    char tablica[10];
+    tablica[0] = ':';
+    for (int i = znakSprawdzany; i < znakSprawdzany+9; i++)
+    {
+        if (i >= sizeOfAktualnaLinia || aktualnaLinia[i] == ' ') tablica[i-znakSprawdzany+1] = 0;
+        else tablica[i-znakSprawdzany+1] = aktualnaLinia[i];
+    }
+    int znalezionyElement = poszukiwaniePosrud(sizeof(tablica),tablica);
+    
+    if (znalezionyElement == -1) blad("mango 67 ");
+
+    ostatniZnakLini =  listaIdzDo[znalezionyElement].znakPowrotu;
+    obecnyCzytanyZnak = listaIdzDo[znalezionyElement].znakPowrotu2;
+
+}
+
 
 int main(int argc, char *qrgv[])
 {
     pamiec = (obiekt*) malloc(iloscObiektow * sizeof(obiekt));
+    listaIdzDo = (idzDo*) malloc(listaIdzDoIlosc *sizeof(listaIdzDoIlosc) );
 
     if (argc > 1) 
     {
         byte rozmiar;
         for (rozmiar = 0; TRUE; rozmiar++) if (qrgv[1][rozmiar] == 0) break;
-        char pierwszyArgument[rozmiar];
+        char pierwszyArgument[rozmiar+1];
+        pierwszyArgument[rozmiar] = 0;
         for (byte i = 0; i < rozmiar; i++) pierwszyArgument[i] = qrgv[1][i];
         plikKodu = fopen(pierwszyArgument, "r");
     }
@@ -118,8 +183,8 @@ int main(int argc, char *qrgv[])
     fseek(plikKodu, 0,2);
     ostatniZnakPliku = ftell(plikKodu);
 
-    int obecnyCzytanyZnak = 0;
-    int ostatniZnakLini;
+    obecnyCzytanyZnak = 0;
+    //ostatniZnakLini = 0;
 
     while (turnON)
     {
@@ -143,9 +208,12 @@ int main(int argc, char *qrgv[])
 
         int sprawdzayZnakWFunkcji = 0;
 
-
+        
         if (aktualnyKodFunkcji == -1) {printERROR("Nie Istniejąca Funkcja, linia %d ",liniaKoduLiczba); turnON = 0;}
-        else if (aktualnyKodFunkcji == 7)
+        else if (aktualnyKodFunkcji == 15) tworzenieGoto(aktualnaLinijkaKodu ,sizeof(aktualnaLinijkaKodu) );
+        else if (aktualnyKodFunkcji == 17) wracanieGoTo(aktualnaLinijkaKodu,sizeof(aktualnaLinijkaKodu));
+        else if (aktualnyKodFunkcji == 23 || aktualnyKodFunkcji == 32  ) komentarz();
+        else if (aktualnyKodFunkcji == 7) 
         {
             for (int i = 1; i < strlen(aktualnaLinijkaKodu); i++ )
             {
@@ -329,5 +397,6 @@ int main(int argc, char *qrgv[])
         //liniaKoduLiczba++;
     }
     free(pamiec);
+    free(listaIdzDo);
     fclose(plikKodu);
 }
