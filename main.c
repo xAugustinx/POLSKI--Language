@@ -1,15 +1,11 @@
 #include <stdio.h>
-#include <malloc.h>
 #include <unistd.h>
-#include <string.h>
+#include <malloc.h>
 #include <stdlib.h>
 
 #include "a"
 
-#define sprawdzayZnakWFunkcji spf
-#define smallestInt -32767
-#define printERROR printf
-#define SPACE 32
+
 
 typedef struct {char nazwaID[10]; int id;  int grupa; float wartosc; byte typeofData; } obiekt;
 typedef struct {int znakPowrotu; char nazwaID[10]; int znakPowrotu2; } idzDo;
@@ -115,116 +111,92 @@ int doNajblizszegoZnaku(int znak)
         else if (znakDoNajblizszego != ' ' && znakDoNajblizszego != '\n') return znak;
     }
 }
-
-void tworzenieGoto(char liniaKodu[], int sizeOfLinijkaKodu )
+float kalkulator(char aktualnaLinijkaKodu[], int odKtoregoZaczac, int rozmiaraktualnaLinijkaKodu )
 {
-    idzDo tymczasowy;
+    int spf = odKtoregoZaczac;
+    float wartoscUstawiona = 0;
 
-    if (sizeOfLinijkaKodu > 10 ) {blad("goto za dużo znaków"); }
-    for (int i = 0; i < sizeOfLinijkaKodu; i++) tymczasowy.nazwaID[i] = liniaKodu[i];
-    for (int i = sizeOfLinijkaKodu; i < 10; i++) tymczasowy.nazwaID[i] = 0;
+    char znakUzyty = '+';
+                float wartoscPojedyncza = 0;
+                
+                byte czyTerazJestZmienna = 0;
+                int pierwszyZnakZmiennej = 0;
+                int ostatniZnak = 0;
+                int przecinek = 0;
 
-    byte czyZnalezniony = 0;
-    if (poszukiwaniePosrud(listaIdzDoIlosc,tymczasowy.nazwaID) > -1) czyZnalezniony = 1;
+                for (spf; spf < rozmiaraktualnaLinijkaKodu+1; spf++)
+                {
+                    if (aktualnaLinijkaKodu[spf] == '+' || aktualnaLinijkaKodu[spf] == '-' || aktualnaLinijkaKodu[spf] == '*' || aktualnaLinijkaKodu[spf] == '/' || rozmiaraktualnaLinijkaKodu == spf )
+                    {
+                        if (czyTerazJestZmienna)
+                        {
+                            char tablicaZNazwaZmiennej[10];
+                            for (int i = pierwszyZnakZmiennej; i < pierwszyZnakZmiennej + 10; i++)
+                            {
+                                if (i <= ostatniZnak) tablicaZNazwaZmiennej[i-pierwszyZnakZmiennej] = aktualnaLinijkaKodu[i];
+                                else tablicaZNazwaZmiennej[i-pierwszyZnakZmiennej] = 0;
+                            }
+                            int wartoscKtoramZajebiemy = czyZnaelziono(tablicaZNazwaZmiennej);
+                            if (wartoscKtoramZajebiemy != smallestInt)
+                            {
+                                wartoscPojedyncza = pamiec[wartoscKtoramZajebiemy].wartosc;
+                            }
+                            przecinek = 0;
+                        }
 
-    if (!czyZnalezniony)
-    {
-        listaIdzDoIlosc++;
-        idzDo * nowy = realloc(listaIdzDo, listaIdzDoIlosc * sizeof(idzDo));
-        listaIdzDo = nowy;
-        tymczasowy.znakPowrotu = obecnyCzytanyZnak-1;
-        tymczasowy.znakPowrotu2 = ostatniZnakLini-1;
-        listaIdzDo[listaIdzDoIlosc-1] = tymczasowy;
-    }
-}
+                        switch (znakUzyty){
+                            case '+': wartoscUstawiona += wartoscPojedyncza; break;
+                            case '-': wartoscUstawiona -= wartoscPojedyncza; break;
+                            case '/': wartoscUstawiona /= wartoscPojedyncza; break;
+                            case '*': wartoscUstawiona *= wartoscPojedyncza; break;
+                        }
+                        znakUzyty = aktualnaLinijkaKodu[spf];
+                        wartoscPojedyncza = 0;
+                        przecinek = 0;
+                        czyTerazJestZmienna = 0;
+                    }
+                    else if (aktualnaLinijkaKodu[spf] > 47 && aktualnaLinijkaKodu[spf] < 58 && !czyTerazJestZmienna )
+                    {
+                        if (!przecinek) wartoscPojedyncza = (wartoscPojedyncza * 10) + aktualnaLinijkaKodu[spf] - 48;
+                        else 
+                        {
+                            wartoscPojedyncza+=((float)(aktualnaLinijkaKodu[spf] - 48))/(float)(przecinek*10);
+                            przecinek++;
+                        }
+                    }
+                    else if (aktualnaLinijkaKodu[spf] != ' ' )
+                    {
+                        if (aktualnaLinijkaKodu[spf] != ',')
+                        {
+                            if (!czyTerazJestZmienna) 
+                            {
+                                czyTerazJestZmienna = 1;
+                                pierwszyZnakZmiennej = spf;
+                                ostatniZnak = spf;
+                            }
+                            else ostatniZnak++;
+                        }
+                        else przecinek++;  
+                    }
+                }
+                return wartoscUstawiona;
+} 
 
-void wracanieGoTo(char aktualnaLinia[], int sizeOfAktualnaLinia)
-{
-    int znakSprawdzany = 0;
-    int czyZaczacLiczyc = 0;
 
-    for (int i = 1; i < sizeOfAktualnaLinia; i++)
-    {
-        if (aktualnaLinia[i-1] == ' ' && aktualnaLinia[i] != ' ') { znakSprawdzany = i; break;}
-    }
-    char tablica[10];
-    tablica[0] = ':';
-    for (int i = znakSprawdzany; i < znakSprawdzany+9; i++)
-    {
-        if (i >= sizeOfAktualnaLinia || aktualnaLinia[i] == ' ') tablica[i-znakSprawdzany+1] = 0;
-        else tablica[i-znakSprawdzany+1] = aktualnaLinia[i];
-    }
-    int znalezionyElement = poszukiwaniePosrud(sizeof(tablica),tablica);
-    
-    if (znalezionyElement == -1) blad("mango 67 ");
-
-    ostatniZnakLini =  listaIdzDo[znalezionyElement].znakPowrotu;
-    obecnyCzytanyZnak = listaIdzDo[znalezionyElement].znakPowrotu2;
-
-}
-
-
-int main(int argc, char *qrgv[])
-{
-    pamiec = (obiekt*) malloc(iloscObiektow * sizeof(obiekt));
-    listaIdzDo = (idzDo*) malloc(listaIdzDoIlosc *sizeof(listaIdzDoIlosc) );
-
-    if (argc > 1) 
-    {
-        byte rozmiar;
-        for (rozmiar = 0; TRUE; rozmiar++) if (qrgv[1][rozmiar] == 0) break;
-        char pierwszyArgument[rozmiar+1];
-        pierwszyArgument[rozmiar] = 0;
-        for (byte i = 0; i < rozmiar; i++) pierwszyArgument[i] = qrgv[1][i];
-        plikKodu = fopen(pierwszyArgument, "r");
-    }
-    else plikKodu = fopen("main.pl","r");
-
-    fseek(plikKodu, 0,2);
-    ostatniZnakPliku = ftell(plikKodu);
-
-    obecnyCzytanyZnak = 0;
-    //ostatniZnakLini = 0;
-
-    while (turnON)
-    {
-        char znakWPetli1;
-        for (ostatniZnakLini = obecnyCzytanyZnak; TRUE; ostatniZnakLini++)
+int zmiennaTworzenie(char aktualnaLinijkaKodu[], int rozmiaraktualnaLinijkaKodu)
         {
-            fseek(plikKodu,ostatniZnakLini,0  );
-            fscanf(plikKodu,"%c", &znakWPetli1 );
-            if (znakWPetli1 == ';') break;  
-        }
-        char aktualnaLinijkaKodu[ostatniZnakLini - obecnyCzytanyZnak+1];
-        aktualnaLinijkaKodu[ostatniZnakLini - obecnyCzytanyZnak] = 0;
-    
-        for (int i = obecnyCzytanyZnak; i < ostatniZnakLini; i++  )
-        {
-            fseek(plikKodu,i,0);
-            fscanf(plikKodu,"%c",&aktualnaLinijkaKodu[i - obecnyCzytanyZnak]);
-        }
-        
-        int aktualnyKodFunkcji = kodPodajnik(aktualnaLinijkaKodu);
+            int spf = 0;
 
-        int sprawdzayZnakWFunkcji = 0;
-
-        
-        if (aktualnyKodFunkcji == -1) {printERROR("Nie Istniejąca Funkcja, linia %d ",liniaKoduLiczba); turnON = 0;}
-        else if (aktualnyKodFunkcji == 15) tworzenieGoto(aktualnaLinijkaKodu ,sizeof(aktualnaLinijkaKodu) );
-        else if (aktualnyKodFunkcji == 17) wracanieGoTo(aktualnaLinijkaKodu,sizeof(aktualnaLinijkaKodu));
-        else if (aktualnyKodFunkcji == 23 || aktualnyKodFunkcji == 32  ) komentarz();
-        else if (aktualnyKodFunkcji == 7) 
-        {
-            for (int i = 1; i < strlen(aktualnaLinijkaKodu); i++ )
+            for (int i = 1; i < rozmiaraktualnaLinijkaKodu; i++ )
             {
                 if (aktualnaLinijkaKodu[i] != SPACE   ) {
                     if (aktualnaLinijkaKodu[i-1] == SPACE) {spf = i; break;}
                 }
             }
-            if (!spf) {printERROR("niepoprawna operacja na zmiennych, linia %d ",liniaKoduLiczba); turnON = 0;};
+            if (!spf) blad("niepoprawna operacja na zmiennych ");
             
             int dlugoscNazwy;
-            for (dlugoscNazwy = spf; dlugoscNazwy < strlen(aktualnaLinijkaKodu); dlugoscNazwy++)
+            for (dlugoscNazwy = spf; dlugoscNazwy < rozmiaraktualnaLinijkaKodu; dlugoscNazwy++)
             {if (aktualnaLinijkaKodu[dlugoscNazwy] == ' ') break; }
             char nazwaZmiennej[10];
             nazwaZmiennej[dlugoscNazwy-1] = 0;
@@ -239,7 +211,7 @@ int main(int argc, char *qrgv[])
 
             byte czyWartoscUstawiona = 0;
 
-            for (spf =  dlugoscNazwy; spf < strlen(aktualnaLinijkaKodu); spf++ ) {
+            for (spf =  dlugoscNazwy; spf < rozmiaraktualnaLinijkaKodu; spf++ ) {
                 if (aktualnaLinijkaKodu[spf] != ' ' && czyWartoscUstawiona ) break;
                 else if (aktualnaLinijkaKodu[spf] == '=' ) czyWartoscUstawiona = 1;
             }
@@ -257,9 +229,9 @@ int main(int argc, char *qrgv[])
                 int ostatniZnak = 0;
                 int przecinek = 0;
 
-                for (spf; spf < strlen(aktualnaLinijkaKodu)+1; spf++)
+                for (spf; spf < rozmiaraktualnaLinijkaKodu+1; spf++)
                 {
-                    if (aktualnaLinijkaKodu[spf] == '+' || aktualnaLinijkaKodu[spf] == '-' || aktualnaLinijkaKodu[spf] == '*' || aktualnaLinijkaKodu[spf] == '/' || strlen(aktualnaLinijkaKodu) == spf )
+                    if (aktualnaLinijkaKodu[spf] == '+' || aktualnaLinijkaKodu[spf] == '-' || aktualnaLinijkaKodu[spf] == '*' || aktualnaLinijkaKodu[spf] == '/' || rozmiaraktualnaLinijkaKodu == spf )
                     {
                         if (czyTerazJestZmienna)
                         {
@@ -326,12 +298,64 @@ int main(int argc, char *qrgv[])
             else pamiec[ktoryElement] = nowyObiekt;
 
         }
-        else if (aktualnyKodFunkcji == 0) {
-            int pierwszy = -1;
+
+void tworzenieGoto(char liniaKodu[], int sizeOfLinijkaKodu )
+{
+    idzDo tymczasowy;
+
+    if (sizeOfLinijkaKodu > 10 ) {blad("goto za dużo znaków"); }
+    for (int i = 0; i < sizeOfLinijkaKodu; i++) tymczasowy.nazwaID[i] = liniaKodu[i];
+    for (int i = sizeOfLinijkaKodu; i < 10; i++) tymczasowy.nazwaID[i] = 0;
+
+    byte czyZnalezniony = 0;
+    if (poszukiwaniePosrud(listaIdzDoIlosc,tymczasowy.nazwaID) > -1) czyZnalezniony = 1;
+
+    if (!czyZnalezniony)
+    {
+        listaIdzDoIlosc++;
+        idzDo * nowy = realloc(listaIdzDo, listaIdzDoIlosc * sizeof(idzDo));
+        listaIdzDo = nowy;
+        tymczasowy.znakPowrotu = obecnyCzytanyZnak-1;
+        tymczasowy.znakPowrotu2 = ostatniZnakLini-1;
+        listaIdzDo[listaIdzDoIlosc-1] = tymczasowy;
+    }
+}
+
+void wracanieGoTo(char aktualnaLinia[], int sizeOfAktualnaLinia)
+{
+    int znakSprawdzany = 0;
+    int czyZaczacLiczyc = 0;
+
+    for (int i = 1; i < sizeOfAktualnaLinia; i++)
+    {
+        if (aktualnaLinia[i-1] == ' ' && aktualnaLinia[i] != ' ') { znakSprawdzany = i; break;}
+    }
+    char tablica[10];
+    tablica[0] = ':';
+    for (int i = znakSprawdzany; i < znakSprawdzany+9; i++)
+    {
+        if (i >= sizeOfAktualnaLinia || aktualnaLinia[i] == ' ') tablica[i-znakSprawdzany+1] = 0;
+        else tablica[i-znakSprawdzany+1] = aktualnaLinia[i];
+    }
+    int znalezionyElement = poszukiwaniePosrud(sizeof(tablica),tablica);
+    
+    if (znalezionyElement == -1)
+    {
+        if (listaIdzDoIlosc <= 1) blad("nie istniejące goto ");
+        else znalezionyElement = listaIdzDoIlosc-1;
+    }
+
+    ostatniZnakLini =  listaIdzDo[znalezionyElement].znakPowrotu;
+    obecnyCzytanyZnak = listaIdzDo[znalezionyElement].znakPowrotu2;
+
+}
+int napisz(char aktualnaLinijkaKodu[],int dlugoscLini)
+{
+    int pierwszy = -1;
             int ostatni = -1;
 
-            for (int i = 7; i < sizeof(aktualnaLinijkaKodu);  i++ ) {if (aktualnaLinijkaKodu[i] != ' ') {pierwszy = i; break;}}
-            for (int i = pierwszy; i < sizeof(aktualnaLinijkaKodu); i++) if ((aktualnaLinijkaKodu[i] == ' ' || aktualnaLinijkaKodu[i] == 0  )) {ostatni = i; break;}
+            for (int i = 7; i < dlugoscLini;  i++ ) {if (aktualnaLinijkaKodu[i] != ' ') {pierwszy = i; break;}}
+            for (int i = pierwszy; i < dlugoscLini; i++) if ((aktualnaLinijkaKodu[i] == ' ' || aktualnaLinijkaKodu[i] == 0  )) {ostatni = i; break;}
 
             if (aktualnaLinijkaKodu[pierwszy] == '"' && aktualnaLinijkaKodu[ostatni-1] == '"')
             {
@@ -350,7 +374,7 @@ int main(int argc, char *qrgv[])
                 nazwaZmiennej[ostatni - pierwszy] = 0;
                 for (int i = pierwszy; i < ostatni; i++) nazwaZmiennej[i- pierwszy] = aktualnaLinijkaKodu[i];
                 int element = czyZnaelziono(nazwaZmiennej);
-                if (element == smallestInt) {printf("BŁĄD LINIA: %d\n",liniaKoduLiczba );   return 1;}
+                if (element == smallestInt) {blad("błąd ");   return 1;}
 
                 if (!pamiec[element].typeofData) printf("%f\n", pamiec[element].wartosc);
                 else if (pamiec[element].typeofData == 1 )
@@ -376,7 +400,72 @@ int main(int argc, char *qrgv[])
                     }
                 }
             } 
+}
+
+
+int main(int argc, char *qrgv[])
+{
+    pamiec = (obiekt*) malloc(iloscObiektow * sizeof(obiekt));
+    listaIdzDo = (idzDo*) malloc(listaIdzDoIlosc *sizeof(listaIdzDoIlosc) );
+
+    if (argc > 1) 
+    {
+        byte rozmiar;
+        for (rozmiar = 0; TRUE; rozmiar++) if (qrgv[1][rozmiar] == 0) break;
+        char pierwszyArgument[rozmiar+2];
+        pierwszyArgument[rozmiar+1] = 0;
+        for (byte i = 0; i < rozmiar; i++) pierwszyArgument[i] = qrgv[1][i];
+
+        plikKodu = fopen(pierwszyArgument, "r");
+    }
+    else plikKodu = fopen("main.pl","r");
+
+    if (plikKodu == NULL) {blad("niepoprawne wczytanie pliku PL++ "); return -1;};
+    
+
+    fseek(plikKodu, 0,2);
+    ostatniZnakPliku = ftell(plikKodu);
+
+    obecnyCzytanyZnak = 0;
+    ostatniZnakLini = 0;
+
+    while (turnON)
+    {
+        char znakWPetli1;
+        for (ostatniZnakLini = obecnyCzytanyZnak; TRUE; ostatniZnakLini++)
+        {
+            fseek(plikKodu,ostatniZnakLini,0  );
+            fscanf(plikKodu,"%c", &znakWPetli1 );
+            if (znakWPetli1 == ';') break;  
         }
+        char aktualnaLinijkaKodu[ostatniZnakLini - obecnyCzytanyZnak+1];
+        aktualnaLinijkaKodu[ostatniZnakLini - obecnyCzytanyZnak] = 0;
+    
+        for (int i = obecnyCzytanyZnak; i < ostatniZnakLini; i++  )
+        {
+            fseek(plikKodu,i,0);
+            fscanf(plikKodu,"%c",&aktualnaLinijkaKodu[i - obecnyCzytanyZnak]);
+        }
+        
+        int aktualnyKodFunkcji = kodPodajnik(aktualnaLinijkaKodu);
+
+        
+#define argSize aktualnaLinijkaKodu,sizeof(aktualnaLinijkaKodu)
+#define argLen  aktualnaLinijkaKodu,strlen(aktualnaLinijkaKodu)       
+
+        switch (aktualnyKodFunkcji)
+        {
+            case -1: blad("Nie istniejąca Funkcja "); break;
+            case 0: napisz(argSize); break;
+            case 7: zmiennaTworzenie(argLen); break;
+            case 15: tworzenieGoto(argSize); break;
+            case 17: wracanieGoTo(argSize); break;
+            case 23: komentarz(); break;
+            case 34: break;
+        }
+
+
+        if (!turnON) break;
 
         //koniec operacji
         ostatniZnakLini+=1;
@@ -388,13 +477,10 @@ int main(int argc, char *qrgv[])
             fscanf(plikKodu,"%c",&znakWPetli2);
             if (znakWPetli2 == '\n') liniaKoduLiczba++;
             else if (znakWPetli2 != ' ' && znakWPetli2 != '\n') break;
-
         }
 
         usleep(100);
         obecnyCzytanyZnak = ostatniZnakLini;
-
-        //liniaKoduLiczba++;
     }
     free(pamiec);
     free(listaIdzDo);

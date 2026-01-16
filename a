@@ -1,12 +1,15 @@
 #define TRUE 1
 #define FALSE 0
 
+#define smallestInt -32767
+#define SPACE 32
+
 typedef unsigned char byte;
 
 typedef struct {unsigned char b0 : 1;unsigned char b1 : 1;unsigned char b2 : 1;unsigned char b3 : 1;unsigned char b4 : 1;unsigned char b5 : 1;unsigned char b6 : 1;unsigned char b7 : 1;} bools;
 
 
-char funkcje[] = {"napisz|zmienna|:|idzDo|komentarz|//|"};
+char funkcje[] = {"napisz|zmienna|:|idzDo|komentarz|//|jezeli|"};
 // kod 0
 // kod 7
 // kod 15
@@ -20,7 +23,12 @@ int iloscLiczb(int meow)
         meow/=10;
         if (!meow) return i;
     }
-    
+}
+
+int strlen(char tablica[])
+{
+    for (int i = 0; TRUE; i++) if (tablica[i] == 0) return i;
+    return -1;
 }
 
 
