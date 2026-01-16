@@ -12,6 +12,9 @@ typedef struct {int znakPowrotu; char nazwaID[10]; int znakPowrotu2; } idzDo;
 
 int ostatniZnakLini;
 
+byte * trueOrFalse;
+byte iloscTrueOrFalse = 1;
+
 int idObiektow = 0;
 
 obiekt * pamiec;
@@ -27,6 +30,9 @@ int liniaKoduLiczba = 0;
 FILE * plikKodu;
 
 int obecnyCzytanyZnak = 0;
+
+
+
 
 
 void edycjaElementu(int elementModefikowany, int wartoscxZmiana) {pamiec[elementModefikowany].wartosc = wartoscxZmiana;}
@@ -111,76 +117,6 @@ int doNajblizszegoZnaku(int znak)
         else if (znakDoNajblizszego != ' ' && znakDoNajblizszego != '\n') return znak;
     }
 }
-float kalkulator(char aktualnaLinijkaKodu[], int odKtoregoZaczac, int rozmiaraktualnaLinijkaKodu )
-{
-    int spf = odKtoregoZaczac;
-    float wartoscUstawiona = 0;
-
-    char znakUzyty = '+';
-                float wartoscPojedyncza = 0;
-                
-                byte czyTerazJestZmienna = 0;
-                int pierwszyZnakZmiennej = 0;
-                int ostatniZnak = 0;
-                int przecinek = 0;
-
-                for (spf; spf < rozmiaraktualnaLinijkaKodu+1; spf++)
-                {
-                    if (aktualnaLinijkaKodu[spf] == '+' || aktualnaLinijkaKodu[spf] == '-' || aktualnaLinijkaKodu[spf] == '*' || aktualnaLinijkaKodu[spf] == '/' || rozmiaraktualnaLinijkaKodu == spf )
-                    {
-                        if (czyTerazJestZmienna)
-                        {
-                            char tablicaZNazwaZmiennej[10];
-                            for (int i = pierwszyZnakZmiennej; i < pierwszyZnakZmiennej + 10; i++)
-                            {
-                                if (i <= ostatniZnak) tablicaZNazwaZmiennej[i-pierwszyZnakZmiennej] = aktualnaLinijkaKodu[i];
-                                else tablicaZNazwaZmiennej[i-pierwszyZnakZmiennej] = 0;
-                            }
-                            int wartoscKtoramZajebiemy = czyZnaelziono(tablicaZNazwaZmiennej);
-                            if (wartoscKtoramZajebiemy != smallestInt)
-                            {
-                                wartoscPojedyncza = pamiec[wartoscKtoramZajebiemy].wartosc;
-                            }
-                            przecinek = 0;
-                        }
-
-                        switch (znakUzyty){
-                            case '+': wartoscUstawiona += wartoscPojedyncza; break;
-                            case '-': wartoscUstawiona -= wartoscPojedyncza; break;
-                            case '/': wartoscUstawiona /= wartoscPojedyncza; break;
-                            case '*': wartoscUstawiona *= wartoscPojedyncza; break;
-                        }
-                        znakUzyty = aktualnaLinijkaKodu[spf];
-                        wartoscPojedyncza = 0;
-                        przecinek = 0;
-                        czyTerazJestZmienna = 0;
-                    }
-                    else if (aktualnaLinijkaKodu[spf] > 47 && aktualnaLinijkaKodu[spf] < 58 && !czyTerazJestZmienna )
-                    {
-                        if (!przecinek) wartoscPojedyncza = (wartoscPojedyncza * 10) + aktualnaLinijkaKodu[spf] - 48;
-                        else 
-                        {
-                            wartoscPojedyncza+=((float)(aktualnaLinijkaKodu[spf] - 48))/(float)(przecinek*10);
-                            przecinek++;
-                        }
-                    }
-                    else if (aktualnaLinijkaKodu[spf] != ' ' )
-                    {
-                        if (aktualnaLinijkaKodu[spf] != ',')
-                        {
-                            if (!czyTerazJestZmienna) 
-                            {
-                                czyTerazJestZmienna = 1;
-                                pierwszyZnakZmiennej = spf;
-                                ostatniZnak = spf;
-                            }
-                            else ostatniZnak++;
-                        }
-                        else przecinek++;  
-                    }
-                }
-                return wartoscUstawiona;
-} 
 
 
 int zmiennaTworzenie(char aktualnaLinijkaKodu[], int rozmiaraktualnaLinijkaKodu)
@@ -402,11 +338,81 @@ int napisz(char aktualnaLinijkaKodu[],int dlugoscLini)
             } 
 }
 
+void jezeli(char aktualnaLinijkaKodu[],int dlugoscLini)
+{
+    int iZ = 1;
+    float wartosciPowownywane[2];
+    char znakPorownywania[2];
+    for (int y = 0; y < 2; y++)
+    {
+        for (iZ; iZ < dlugoscLini; iZ++) if (aktualnaLinijkaKodu[iZ-1] == ' ' && aktualnaLinijkaKodu[iZ] != ' ' ) break;
+        byte czyZmienna = 1;
+        if (aktualnaLinijkaKodu[iZ] > 47 && aktualnaLinijkaKodu[iZ] < 58  ) czyZmienna = 0;
+        int LIZ = iZ;
+        if (czyZmienna)
+        {
+            for (LIZ; LIZ < dlugoscLini; LIZ++) if (aktualnaLinijkaKodu[LIZ] == ' ' || aktualnaLinijkaKodu[LIZ] == 0 ) break;
+            char zmienna[LIZ - iZ + 1]; zmienna[LIZ - iZ] = 0;
+            for (int i = iZ; i < LIZ; i++ ) zmienna[i-iZ] = aktualnaLinijkaKodu[i];
+            wartosciPowownywane[y] = pamiec[czyZnaelziono(zmienna)].wartosc;
+        }
+        else
+        {
+            wartosciPowownywane[y] = 0;
+            for (LIZ; aktualnaLinijkaKodu[LIZ]!=' ' && aktualnaLinijkaKodu[LIZ]!=0; LIZ++)
+            {wartosciPowownywane[y] = (wartosciPowownywane[y] * 10) + aktualnaLinijkaKodu[LIZ]-48;}
+        }
+        if (y == 1) break;
+        for (iZ = LIZ; iZ < dlugoscLini; iZ++) if (aktualnaLinijkaKodu[iZ-1] == ' ' && aktualnaLinijkaKodu[iZ] != ' ' ) break;
+        for (int i = 0; i < 2; i++) znakPorownywania[i] = aktualnaLinijkaKodu[iZ + i];
+        iZ++;
+    }
+
+    byte czyTrue = 0;
+
+    if (znakPorownywania[0] == '=' && znakPorownywania[1] == '=') {
+        if (wartosciPowownywane[0] == wartosciPowownywane[1]) czyTrue = 1;
+    }
+    else if (znakPorownywania[0] == '!' && znakPorownywania[1] == '=') {
+        if (wartosciPowownywane[0] != wartosciPowownywane[1]) czyTrue = 1;
+    }
+    else if (znakPorownywania[0] == '>') {
+        if (znakPorownywania[1] == '=') {
+            if (wartosciPowownywane[0] >= wartosciPowownywane[1]) czyTrue = 1;
+        } else {
+            if (wartosciPowownywane[0] > wartosciPowownywane[1]) czyTrue = 1;
+        }
+    }
+    else if (znakPorownywania[0] == '<') {
+        if (znakPorownywania[1] == '=') {
+            if (wartosciPowownywane[0] <= wartosciPowownywane[1]) czyTrue = 1;
+        } else {
+            if (wartosciPowownywane[0] < wartosciPowownywane[1]) czyTrue = 1;
+        }
+    }
+
+    iloscTrueOrFalse++;
+    byte * tymczasowy =  realloc(trueOrFalse, iloscTrueOrFalse * sizeof(byte));
+    trueOrFalse = tymczasowy;
+    trueOrFalse[iloscTrueOrFalse-1] = czyTrue;
+
+}
+void usuniecieJednegoZTrueAndFalse() {
+    if (iloscTrueOrFalse > 0) {
+        iloscTrueOrFalse--;
+        byte * tymczasowy =  realloc(trueOrFalse, iloscTrueOrFalse * sizeof(byte));
+    }
+}
+
 
 int main(int argc, char *qrgv[])
 {
     pamiec = (obiekt*) malloc(iloscObiektow * sizeof(obiekt));
     listaIdzDo = (idzDo*) malloc(listaIdzDoIlosc *sizeof(listaIdzDoIlosc) );
+
+    trueOrFalse = (byte*) malloc( iloscTrueOrFalse * sizeof(byte) );
+    trueOrFalse[0] == TRUE;
+
 
     if (argc > 1) 
     {
@@ -453,16 +459,21 @@ int main(int argc, char *qrgv[])
 #define argSize aktualnaLinijkaKodu,sizeof(aktualnaLinijkaKodu)
 #define argLen  aktualnaLinijkaKodu,strlen(aktualnaLinijkaKodu)       
 
-        switch (aktualnyKodFunkcji)
-        {
-            case -1: blad("Nie istniejąca Funkcja "); break;
-            case 0: napisz(argSize); break;
-            case 7: zmiennaTworzenie(argLen); break;
-            case 15: tworzenieGoto(argSize); break;
-            case 17: wracanieGoTo(argSize); break;
-            case 23: komentarz(); break;
-            case 34: break;
+        if (trueOrFalse[iloscTrueOrFalse-1] == TRUE || iloscTrueOrFalse == 1 || aktualnyKodFunkcji == 43 ) {
+            switch (aktualnyKodFunkcji)
+            {
+                case -1: blad("Nie istniejąca Funkcja "); break;
+                case 0: napisz(argSize); break;
+                case 7: zmiennaTworzenie(argLen); break;
+                case 15: tworzenieGoto(argSize); break;
+                case 17: wracanieGoTo(argSize); break;
+                case 23: komentarz(); break;
+                case 36: jezeli(argSize);  break;
+                case 43: usuniecieJednegoZTrueAndFalse(); break;
+            }
         }
+
+
 
 
         if (!turnON) break;
@@ -484,5 +495,6 @@ int main(int argc, char *qrgv[])
     }
     free(pamiec);
     free(listaIdzDo);
+    free(trueOrFalse);
     fclose(plikKodu);
 }
