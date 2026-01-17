@@ -2,13 +2,15 @@
 #include <unistd.h>
 #include <malloc.h>
 #include <stdlib.h>
-
 #include "a"
 
-
+#define standardowyPlik "./main.pl"
 
 typedef struct {char nazwaID[10]; int id;  int grupa; float wartosc; byte typeofData; } obiekt;
 typedef struct {int znakPowrotu; char nazwaID[10]; int znakPowrotu2; } idzDo;
+
+
+#define argWFunkcjach char aktualnaLinijkaKodu[],int dlugoscLini
 
 int ostatniZnakLini;
 
@@ -26,14 +28,10 @@ long listaIdzDoIlosc = 1;
 int ostatniZnakPliku;
 byte turnON = TRUE;
 
-int liniaKoduLiczba = 0;
+int liniaKoduLiczba = -1;
 FILE * plikKodu;
 
 int obecnyCzytanyZnak = 0;
-
-
-
-
 
 void edycjaElementu(int elementModefikowany, int wartoscxZmiana) {pamiec[elementModefikowany].wartosc = wartoscxZmiana;}
 void blad(char nazwa[]) {printf("%s, LINIA: %d\n",nazwa, liniaKoduLiczba ); turnON = 0;} 
@@ -230,7 +228,7 @@ int zmiennaTworzenie(char aktualnaLinijkaKodu[], int rozmiaraktualnaLinijkaKodu)
 
             int ktoryElement = czyZnaelziono(nazwaZmiennej);
 
-            if (czyZnaelziono(nazwaZmiennej) == ktoryElement)nowyElement(nowyObiekt);
+            if (ktoryElement == smallestInt) nowyElement(nowyObiekt);
             else pamiec[ktoryElement] = nowyObiekt;
 
         }
@@ -277,7 +275,7 @@ void wracanieGoTo(char aktualnaLinia[], int sizeOfAktualnaLinia)
     
     if (znalezionyElement == -1)
     {
-        if (listaIdzDoIlosc <= 1) blad("nie istniejące goto ");
+        if (listaIdzDoIlosc <= 1) return;
         else znalezionyElement = listaIdzDoIlosc-1;
     }
 
@@ -285,7 +283,7 @@ void wracanieGoTo(char aktualnaLinia[], int sizeOfAktualnaLinia)
     obecnyCzytanyZnak = listaIdzDo[znalezionyElement].znakPowrotu2;
 
 }
-int napisz(char aktualnaLinijkaKodu[],int dlugoscLini)
+int napisz(argWFunkcjach)
 {
     int pierwszy = -1;
             int ostatni = -1;
@@ -338,7 +336,7 @@ int napisz(char aktualnaLinijkaKodu[],int dlugoscLini)
             } 
 }
 
-void jezeli(char aktualnaLinijkaKodu[],int dlugoscLini)
+void jezeli(argWFunkcjach)
 {
     int iZ = 1;
     float wartosciPowownywane[2];
@@ -397,11 +395,64 @@ void jezeli(char aktualnaLinijkaKodu[],int dlugoscLini)
     trueOrFalse[iloscTrueOrFalse-1] = czyTrue;
 
 }
+
+
 void usuniecieJednegoZTrueAndFalse() {
     if (iloscTrueOrFalse > 0) {
         iloscTrueOrFalse--;
         byte * tymczasowy =  realloc(trueOrFalse, iloscTrueOrFalse * sizeof(byte));
+        trueOrFalse = tymczasowy;
     }
+}
+void zlamaniePetli()
+{
+    if (listaIdzDoIlosc > 1)
+    {
+        listaIdzDoIlosc--;
+        idzDo * tymczasowy =  realloc(listaIdzDo, listaIdzDoIlosc * sizeof(idzDo));
+        listaIdzDo = tymczasowy;
+    }
+    else turnON = FALSE;
+    
+}
+
+int podloga(argWFunkcjach)
+{
+    int i;
+    for (i = 1; i < dlugoscLini; i++) if (aktualnaLinijkaKodu[i] != ' ' && aktualnaLinijkaKodu[i-1] == ' ') break;
+    int y;
+    for (y = i; y < dlugoscLini; y++) if (aktualnaLinijkaKodu[y] == ' ' || aktualnaLinijkaKodu[y] == 0) break;
+
+    char zmienna[y - i + 1];
+    zmienna[y - i] = 0;
+
+    for (int z = i; z < y; z++) zmienna[z - i] = aktualnaLinijkaKodu[z];
+
+    int meow = czyZnaelziono(zmienna);
+
+    if (meow != smallestInt) pamiec[meow].wartosc = (int)pamiec[meow].wartosc;
+    else blad("nie istniejąca zmienna");
+
+}
+
+int zbieranieInputu(argWFunkcjach)
+{
+    int i;
+    for (i = 1; i < dlugoscLini; i++) if (aktualnaLinijkaKodu[i] != ' ' && aktualnaLinijkaKodu[i-1] == ' ') break;
+    int y;
+    for (y = i; y < dlugoscLini; y++) if (aktualnaLinijkaKodu[y] == ' ' || aktualnaLinijkaKodu[y] == 0) break;
+
+    char mode[y - i + 1];
+    mode[y - i] = 0;
+    for (int z = i; z < y; z++) mode[z - i] = aktualnaLinijkaKodu[z];
+
+    int znaleziony =  czyZnaelziono(mode);
+
+    int zapisany = 0;
+
+    scanf("%d", &zapisany );
+
+    pamiec[znaleziony].wartosc = zapisany;
 }
 
 
@@ -418,15 +469,16 @@ int main(int argc, char *qrgv[])
     {
         byte rozmiar;
         for (rozmiar = 0; TRUE; rozmiar++) if (qrgv[1][rozmiar] == 0) break;
-        char pierwszyArgument[rozmiar+2];
-        pierwszyArgument[rozmiar+1] = 0;
+        char pierwszyArgument[rozmiar+1];
+        pierwszyArgument[rozmiar] = 0;
         for (byte i = 0; i < rozmiar; i++) pierwszyArgument[i] = qrgv[1][i];
 
         plikKodu = fopen(pierwszyArgument, "r");
     }
-    else plikKodu = fopen("main.pl","r");
+    else plikKodu = fopen(standardowyPlik,"r");
 
     if (plikKodu == NULL) {blad("niepoprawne wczytanie pliku PL++ "); return -1;};
+    
     
 
     fseek(plikKodu, 0,2);
@@ -459,7 +511,7 @@ int main(int argc, char *qrgv[])
 #define argSize aktualnaLinijkaKodu,sizeof(aktualnaLinijkaKodu)
 #define argLen  aktualnaLinijkaKodu,strlen(aktualnaLinijkaKodu)       
 
-        if (trueOrFalse[iloscTrueOrFalse-1] == TRUE || iloscTrueOrFalse == 1 || aktualnyKodFunkcji == 43 ) {
+        if (trueOrFalse[iloscTrueOrFalse-1] == TRUE || iloscTrueOrFalse == 1 || aktualnyKodFunkcji == 43 || aktualnyKodFunkcji == 36) {
             switch (aktualnyKodFunkcji)
             {
                 case -1: blad("Nie istniejąca Funkcja "); break;
@@ -470,6 +522,9 @@ int main(int argc, char *qrgv[])
                 case 23: komentarz(); break;
                 case 36: jezeli(argSize);  break;
                 case 43: usuniecieJednegoZTrueAndFalse(); break;
+                case 46: zlamaniePetli(); break;
+                case 51: podloga(argSize); break; 
+                case 59: zbieranieInputu(argSize); break;
             }
         }
 
